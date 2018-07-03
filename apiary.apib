@@ -3,78 +3,30 @@ HOST: http://polls.apiblueprint.org/
 
 # Legacy@ZPS
 
-API for Legacy system with ZPS
+API for One OPS
 
-## Questions Collection [/questions]
+# Group API - Parcel
+## Create Parcel [/api/legacy/parcel]
+### POST [POST]
 
-### List All Questions [GET]
+Import an **Array** of [**Parcel**](#reference/model-parcel) Objects and process them into shipments.
 
-+ Response 200 (application/json)
+The shipments can be of any combination of accepted service types.
 
-        [
-            {
-                "question": "Favourite programming language?",
-                "published_at": "2015-08-05T08:40:51.620Z",
-                "choices": [
-                    {
-                        "choice": "Swift",
-                        "votes": 2048
-                    }, {
-                        "choice": "Python",
-                        "votes": 1024
-                    }, {
-                        "choice": "Objective-C",
-                        "votes": 512
-                    }, {
-                        "choice": "Ruby",
-                        "votes": 256
-                    }
-                ]
-            }
-        ]
+### Requested Parameters
 
-### Create a New Question [POST]
+**Array** of [**Parcel**](#reference/model-parcel) Models
 
-You may create your own question using this action. It takes a JSON
-object containing a question and a collection of answers in the
-form of choices.
 
-+ Request (application/json)
+### Response
 
-        {
-            "question": "Favourite programming language?",
-            "choices": [
-                "Swift",
-                "Python",
-                "Objective-C",
-                "Ruby"
-            ]
-        }
+#### HTTP 200 : Success
++ An **Array** of [**CreateShipmenResult**](#reference/model-createshipmentresult) Models
 
-+ Response 201 (application/json)
 
-    + Headers
+#### HTTP 400 : Failure
++ Signals that Input was Badly Formatted
 
-            Location: /questions/2
 
-    + Body
-
-            {
-                "question": "Favourite programming language?",
-                "published_at": "2015-08-05T08:40:51.620Z",
-                "choices": [
-                    {
-                        "choice": "Swift",
-                        "votes": 0
-                    }, {
-                        "choice": "Python",
-                        "votes": 0
-                    }, {
-                        "choice": "Objective-C",
-                        "votes": 0
-                    }, {
-                        "choice": "Ruby",
-                        "votes": 0
-                    }
-                ]
-            }
+#### HTTP 401 : Failure
++ Signals that Authentication Failed
