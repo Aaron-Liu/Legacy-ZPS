@@ -5,6 +5,98 @@ HOST: http://polls.apiblueprint.org/
 
 API for One OPS
 
+## Format and Values
+
+### DateTime Format and Time Zone
+
+360zebra uses the ISO 8601 combined format for dateTimes being submitted to and returned from the API. 
+
+The dateTime values must be in following format: 
+
+yyyy-mm-dd hh:mm:ss (24 hour notation). Example - ``2016-11-29 20:10:59``
+
+**Unless specified all time must be UTC**
+
+
+### Accepted ID Type
+
+Currently ZPS only accept ID Card numbers, in the future Passport numbers will be used as well.
+
+Value | ID Type
+------|------------
+1     | Identity Card
+
+
+### Accepted Currency
+
+ISO 4217 Code | Currency Type
+--------------|----------------
+AUD           | Australian Dollar
+CAD           | Canadian Dollar
+CNY           | Chinese Yuan
+EUR           | Euro
+GBP           | (British) Pound Sterling
+HKD           | Hong Kong Dollar
+JPY           | Japanese Yen
+KRW           | South Korean Won
+MYR           | Malaysian Ringgit
+USD           | United States Dollar
+
+
+### Accepted Service Type
+
+Code       | Type          | Description
+-----------|---------------|------------------
+BC-T       | SKU Pre-filed | BC Customs Clearance
+CC-DDP-SKU | SKU Pre-filed | CC-DDP Customs Clearance
+CC-DDP     |               | CC-DDP Customs Clearance
+USPS       |               | USPS
+
+
+
+### Accepted Order Types
+If the field is not present, then by defeault it will be considered a Normal/Standard Order
+
+orderType                    | Description
+-----------------------------|----------------------
+STD                          | Normal/Standard Order
+MPS                          | Multiple Parcel Order
+CPS                          | Combine Parcel Order (Consolidation Service Requested)
+
+
+
+### Accepted Value Added Service Codes
+
+Value      | Service Description
+-----------|----------------
+10         | Use Existing Label (Do not swap shipping label)
+21         | Reinforce Packaging
+23         | Consolidation
+32         | Customized Service (?)
+36         | Remove Invoice/Packing Slip
+39         | Insurance 
+41         | Additional Packaging
+42         | Optimizing Packaging (minimize size and weight)
+
+
+
+### Accepted Unit of Lengths
+
+Abbreviation | Unit of Length
+-------------|---------------
+cm           | Centimeter
+in           | Inch
+
+
+### Accepted Unit of Weights
+
+Abbreviation | Unit of Weights
+-------------|----------------
+g            | Gram
+kg           | Kilogram
+oz           | Ounce
+lb           | Pound
+
 # Group API - Parcel
 ## Create Parcel [/api/legacy/parcel]
 ### POST [POST]
@@ -30,3 +122,147 @@ The shipments can be of any combination of accepted service types.
 
 #### HTTP 401 : Failure
 + Signals that Authentication Failed
+
+
+# Group Model -  Address
+Model used for Addresses
+
+``District`` is Required for some countries
+
+Name                  | Data Type                | Description
+----------------------|--------------------------|-------------------
+``name``              | String(50), Required     | Person/Business Name
+``street1``           | String(50), Required     | Street Address 01
+``street2``           | String(50)               | Street Address 02
+``street3``           | String(50)               | Street Address 03
+``district``          | String(50), Conditional  | District/Area
+``city``              | String(35), Required     | City
+``province``          | String(35), Required     | State/Province
+``postalCode``        | String(20), Required     | Zip/Postal Code
+``countryCode``       | String(2), Required      | [**ISO 3166-1 Alpha-2**](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) Country Code
+``phone``             | String(15), Required     |
+
+
+
+# Group Model -  CreateShipmentResult
+
+In the case of a successful import, the model will have a ``tracking number`` and ``batchID``
+
+In the case of a failed import, the model will have  no ``tracking number``; instead it will have a ``batchID`` of -1 and will have the very first error encounted for said parcel in the ``error`` field
+
+Name             | Data Type  | Description
+-----------------|------------|-------------------
+``batchID``      | String     | ID of the currently imported batch.  Pre-filed SKU Shipments will have a different batchID than the rest.
+``customerRef``  | String     | Customer's Reference Number for this Shipment
+``trackingNbr``  | String     | Shipment's Zebra Referrence Number
+``error``        | String     | The First Error encountered for this Shipment
+
+
+# Group Model - Dimension
+Model used to hold the 3 Length, Width, Height measurements with their Unit of Lengths.
+
+See [**Accepted Unit of Length**](#introduction/format-and-values/accepted-unit-of-lenghts)
+
+Name                  | Data Type            | Description
+----------------------|----------------------|-------------------
+``length``            | Decimal, Required    | The Length Value
+``width``             | Decimal, Required    | The Width Value
+``height``            | Decimal, Required    | The Height Value
+``lengthUnit``        | String(2), Required  | Abbreviated Weight Unit
+
+
+
+
+# Group Model - GoodsInfo
+Model used to hold a single Goods/Line Item in a Parcel's Goods List
+
+**TotalValue must be in the native currency of the destination country**
+
+Name                  | Data Type                | Description
+----------------------|--------------------------|-------------------
+``sku``               | String(40), Conditional  | Item's SKU, Required for Customs Clearance Methods that require Pre-Filed SKU
+``name``              | String(50), Required     | Item's Name
+``brand``             | String(50), Conditional  | Item's Brand, Required for some Customs Clearance Methods
+``model``             | String(50), Conditional  | Item's Model, Required for some Customs Clearance Methods
+``spec``              | String(50), Conditional  | Additional Specifications of the Item, Required for some Customs Clearance Methods
+
+
+
+# Group Model -  IDInfo
+Model used to hold Identification Document Information
+
+Name                | Data Type            | Description
+--------------------|----------------------|-------------------
+``type``            | Integer, Required    | Type of Identification Document, See [**Accepted IDType Value**](#introduction/format-and-values/accepted-id-type)
+``number``          | String(25), Required | ID Number
+``frontImgUrl``     | String               | URL of the Front ID Image File
+``backImgUrl``      | String               | URL of the Back ID Image File
+
+
+
+# Group Model - LineItem
+Model used to hold a single Goods/Line Item in a Parcel's Goods List
+
+Name                  | Data Type            | Description
+----------------------|----------------------|-------------------
+``goods``             | [**GoodsInfo**](#reference/model-goodsinfo), Required | ``goods`` info, See [**GoodsInfo**](#reference/model-goodsinfo) model.
+``quantity``          | Integer, Required    | Quantity of this ``goods`` in the parcel
+``lineValue``         | [**Money**](#reference/model-money), Conditional | Total Value of this Line Item = Unit Price x Quanity, Required for some Customs Clearance Methods.  Only accepts [**supported currency types**](#introduction/format-and-values/accepted-currency).
+
+
+
+# Group Model - Money
+Model used to hold a amount of a specific currency
+
+Only accepts [**supported currency types**](#introduction/format-and-values/accepted-currency)
+
+Name          | Data Type            | Description
+--------------|----------------------|-------------------
+``amount``    | Decimal, Required    | Amount
+``currency``  | String(3), Required  | Currency Code:  See [**Accepted Currency**](#introduction/format-and-values/accepted-currency)
+
+
+
+# Group Model - Parcel
+Model used to hold a Shipping Parcel
+
+Name                   | Data Type              | Description
+-----------------------|------------------------|-------------------
+``type``               | String(3)              | 3 letter Code that denotes the Order Type.  See [**Accepted Order Types**](#introduction/format-and-values/accepted-order-types)
+``serviceType``        | String(20), Required   | Parcel's Service Type
+``referenceNumber``    | String(40), Required   | Customer's Reference Number for this Parcel
+``preCourierNumbers``  | String(40) **[ ]**     | Array of Associated Pre-Courier (First Mile Delivery) Tracking Number.  If count>1 it means it is multiple parcel for a single order.
+``valueAddedServices`` | Integer **[ ]**        | Array of Value Added Service IDs.  See [**Accepted Value-Added Service Codes**](#introduction/format-and-values/accepted-value-added-service-codes)
+``shipFrom``           | [**Address**](#reference/model-address)             | Overrides the Customer's Site Shipping Address
+``shipTo``             | [**Address**](#reference/model-address), Required   | Consignee's Address
+``idInfo``             | [**IDInfo**](#reference/model-idinfo), Conditional  | Consignee's Identification Information, may be required for some Customs Clearance Methods
+``lineItems``          | [**LineItem**](#reference/model-lineitem) **[ ]**, Required  | Array of goods in this parcel
+``declaredWeight``     | [**Weight**](#reference/model-weight), Conditional  | An [**Weight**](#reference/model-weight) Object holding the Customer's Declared Weight
+``declaredDimension``  | [**Dimension**](#reference/model-dimension), Conditional  | An [**Dimension**](#reference/model-dimensions) Object holding the Customer's Declared Dimension
+
+
+
+# Group Model - Weight
+Model used to hold a Weight Value with a Unit of Weights.
+
+Name                  | Data Type            | Description
+----------------------|----------------------|-------------------
+``weight``            | Decimal, Required    | The Weight Value
+``weightUnit``        | String(2), Required  | Abbreviated Unit of Weight, See [**Accepted Unit of Weight**](#introduction/format-and-values/accepted-unit-of-weights)
+
+
+
+# Group Model - TenancyInfo
+
+Name                  | Data Type            | Description
+----------------------|----------------------|-----------------------------------------
+``alias``             | String(30), Required | Tenant's Alias (CustomeCode)
+
+
+# Group Model - TenantParcel
+Model used to hold a Tenant's Shipping Parcel
+
+Name                  | Data Type                                                    | Description
+----------------------|--------------------------------------------------------------|-------------------
+``tenancy``           | [**TenancyInfo**](#reference/model-tenancyinfo), Required    | Parcel Owner's Tenancy Info
+``parcel``            | [**Parcel**](#reference/model-parcel), Required              | Parcel's Detail
